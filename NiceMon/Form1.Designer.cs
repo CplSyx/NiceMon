@@ -28,6 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.label1 = new System.Windows.Forms.Label();
             this.nicehashWalletAddressBox = new System.Windows.Forms.TextBox();
@@ -37,7 +40,9 @@
             this.logOutput = new System.Windows.Forms.TextBox();
             this.donateLabel = new System.Windows.Forms.Label();
             this.textBox1 = new System.Windows.Forms.TextBox();
+            this.profitabilityChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.profitabilityChart)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
@@ -102,11 +107,11 @@
             // 
             // logOutput
             // 
-            this.logOutput.Location = new System.Drawing.Point(16, 63);
+            this.logOutput.Location = new System.Drawing.Point(16, 474);
             this.logOutput.Multiline = true;
             this.logOutput.Name = "logOutput";
             this.logOutput.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.logOutput.Size = new System.Drawing.Size(634, 515);
+            this.logOutput.Size = new System.Drawing.Size(634, 104);
             this.logOutput.TabIndex = 6;
             // 
             // donateLabel
@@ -130,11 +135,29 @@
             this.textBox1.Text = "Time to Target";
             this.textBox1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
+            // profitabilityChart
+            // 
+            chartArea1.Name = "ChartArea1";
+            this.profitabilityChart.ChartAreas.Add(chartArea1);
+            legend1.Name = "Legend1";
+            this.profitabilityChart.Legends.Add(legend1);
+            this.profitabilityChart.Location = new System.Drawing.Point(16, 63);
+            this.profitabilityChart.Name = "profitabilityChart";
+            series1.ChartArea = "ChartArea1";
+            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+            series1.Legend = "Legend1";
+            series1.Name = "Series1";
+            this.profitabilityChart.Series.Add(series1);
+            this.profitabilityChart.Size = new System.Drawing.Size(634, 405);
+            this.profitabilityChart.TabIndex = 9;
+            this.profitabilityChart.Text = "chart1";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1300, 603);
+            this.ClientSize = new System.Drawing.Size(664, 603);
+            this.Controls.Add(this.profitabilityChart);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.donateLabel);
             this.Controls.Add(this.logOutput);
@@ -150,6 +173,7 @@
             this.Text = "NiceMon";
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.profitabilityChart)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -165,6 +189,7 @@
         private System.Windows.Forms.TextBox logOutput;
         private System.Windows.Forms.Label donateLabel;
         private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.DataVisualization.Charting.Chart profitabilityChart;
     }
 }
 

@@ -22,10 +22,12 @@ namespace NiceMon
         private const string URL = "https://api.nicehash.com/api";
         private string urlParameters = "?method=stats.provider.ex&addr=";
         private string urlParametersWithKey = "";
-        private const string myBTCaddress = "3BUJYidvCCseRrgKzq5xG2ENtD1FyYkemu";
-        private SortedDictionary<int, decimal> snapshot = new SortedDictionary<int, decimal>();
+        private const string myBTCaddress = "3BUJYidvCCseRrgKzq5xG2ENtD1FyYkemu";        
         private SQLiteConnection dbCon;
         private string nicehashWalletAddress = "";
+        private SortedDictionary<int, decimal> latestData = new SortedDictionary<int, decimal>();
+
+        private decimal averageProfit30Days = 0;
 
         public Form1()
         {
@@ -37,7 +39,20 @@ namespace NiceMon
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            configureProfitChart();
             initDB();
+        }
+
+        private void configureProfitChart()
+        {
+            profitabilityChart.Legends.Clear();
+            
+
+        }
+
+        private void updateProfitChart()
+        {
+            profitabilityChart.Series[0].Points.DataBindXY(latestData.Keys, latestData.Values);
         }
 
         private void initDB()
@@ -51,7 +66,8 @@ namespace NiceMon
                     dbCon.Open();
                     string sql = "CREATE TABLE profit (address VARCHAR(40), timestamp INT, btc DECIMAL(15,8))";
                     SQLiteCommand command = new SQLiteCommand(sql, dbCon);
-                    command.ExecuteNonQuery();
+                    command.ExecuteNonQuery(); 
+                    dbCon.Close();
                 }
                 catch (Exception e)
                 {
@@ -95,6 +111,7 @@ namespace NiceMon
 
         private async void getNiceHashStats()
         {
+            log("Starting update.");
             HttpClient client = new HttpClient();
             client.BaseAddress = new Uri(URL);
 
@@ -123,55 +140,78 @@ namespace NiceMon
                     string jsonFormatted = Newtonsoft.Json.Linq.JValue.Parse(json).ToString(Formatting.Indented);                  
                     log("Received data for NiceHash wallet address " + jsonOutput.result.addr);
 
-                    log("Processing data, please wait...");
+                    log("Processing data...");
+                    Dictionary<int, decimal> APIsnapshot = new Dictionary<int, decimal>();
                     for (int i = 0; i < jsonOutput.result.past.Count; i++)
                     {
                         for (int j = 0; j < jsonOutput.result.past[i].data.Count; j++)
                         {
                            try
                             {
-                                snapshot.Add(Int32.Parse(jsonOutput.result.past[i].data[j][0].ToString()), decimal.Parse(jsonOutput.result.past[i].data[j][2].ToString()));
+                                APIsnapshot.Add(Int32.Parse(jsonOutput.result.past[i].data[j][0].ToString()), decimal.Parse(jsonOutput.result.past[i].data[j][2].ToString()));
                             }
                             catch (System.ArgumentException e)
                             {
-                                if (e.Message.IndexOf("An entry with the same key") >= 0)
+                                if (e.Message.IndexOf("same key") >= 0)
                                 {
-                                    snapshot[Int32.Parse(jsonOutput.result.past[i].data[j][0].ToString())] = snapshot[Int32.Parse(jsonOutput.result.past[i].data[j][0].ToString())] + decimal.Parse(jsonOutput.result.past[i].data[j][2].ToString());
+                                    APIsnapshot[Int32.Parse(jsonOutput.result.past[i].data[j][0].ToString())] = APIsnapshot[Int32.Parse(jsonOutput.result.past[i].data[j][0].ToString())] + decimal.Parse(jsonOutput.result.past[i].data[j][2].ToString());
                                 }
                                 else
                                     log(e.Message);
                             }
                         }
                     }
+
+                    dbCon.Open();
+                    Dictionary<int, decimal> existingProfitTable = new Dictionary<int, decimal>();
+                    int Limit30Days = ((int)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds - 1513282869) / 300;
+                    using (SQLiteCommand cmd = new SQLiteCommand("SELECT timestamp, btc FROM profit WHERE address='" + nicehashWalletAddress + "' AND timestamp > '" + Limit30Days + "'", dbCon))
+                    {
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                existingProfitTable[(int)reader["timestamp"]] = (decimal)reader["btc"];
+                            }
+                        }
+                    }
+
+                    var itemsToUpdate = APIsnapshot.Except(existingProfitTable);
+
                     log("Complete.");
                     /*foreach (KeyValuePair<int, decimal> kvp in snapshot)
                     {
                         log(kvp.Key + " : " + kvp.Value);
                     }*/
                     log("Updating database...");
-                    dbCon.Open();
-                    using (var cmd = new SQLiteCommand(dbCon))
+                    
+
+                    int k = 0;
+                    using (SQLiteCommand cmd = new SQLiteCommand(dbCon))
                     {
-                        using (var transaction = dbCon.BeginTransaction())
+                        using (SQLiteTransaction transaction = dbCon.BeginTransaction())
                         {
-                            foreach (KeyValuePair<int, decimal> kvp in snapshot)
+                            foreach (KeyValuePair<int, decimal> kvp in itemsToUpdate)
                             {
 
                                 cmd.CommandText = "INSERT INTO profit (address, timestamp, btc) VALUES ('" + nicehashWalletAddress + "', '" + kvp.Key + "', '" + kvp.Value + "');";
                                 cmd.ExecuteNonQuery();
-
+                                k++;
                             }
 
                             transaction.Commit();
                         }
                     }
                     dbCon.Close();
-                    log("Done.");
+                    log("Done. Inserted " + k + " rows.");
+
+                    latestData = new SortedDictionary<int, decimal>(existingProfitTable);
+
                     
                 } 
                 catch (Exception ex)
                 {
-                    log("ERROR");
+                    log("Error.");
                     log(ex.Message);
                     log(ex.ToString());
                     log(ex.StackTrace);
@@ -179,13 +219,22 @@ namespace NiceMon
             }
             else
             {
+                log("Error connecting to API.");
                 log((int)response.StatusCode + " : " + response.ReasonPhrase);
             }
+            
+            updateAverageProfit();
+            updateTargetDate();
+
+            updateProfitChart();
+
+            log("Update complete.");
         }
 
         public void log(string s)
         {
-            logOutput.AppendText(s + "\r\n");
+
+            logOutput.AppendText("[" + DateTime.Now.ToString("HH:mm:ss") + "] " + s + "\r\n");
         }
 
         private void donateLabel_Click(object sender, EventArgs e)
@@ -194,7 +243,36 @@ namespace NiceMon
             MessageBox.Show("Bitcoin address copied to clipboard", "Donate!", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
+        private void updateAverageProfit()
+        {
+            averageProfit30Days = latestData.Sum(v => v.Value) / latestData.Count;
+        }
+
+        private void updateTargetDate()
+        {
+            decimal target = decimal.Parse(numericUpDown1.Value.ToString());
+            var daysToTarget = (target / averageProfit30Days);
+            var yearsToTarget = Math.Truncate(daysToTarget / 365);
+            var monthsToTarget = Math.Truncate((daysToTarget % 365) / 30);
+            var remainingDays = Math.Truncate((daysToTarget % 365) % 30);
+            if(yearsToTarget > 0)
+            {
+                textBox1.Text = yearsToTarget + " years, " + monthsToTarget + " months, " + remainingDays + " days";
+            }
+            else if (monthsToTarget > 0)
+            {
+                textBox1.Text = monthsToTarget + " months, " + remainingDays + " days";
+            }
+            else
+            {
+                textBox1.Text = remainingDays + " days";
+            }
+
+        }
+
+
     }
+
 
     class StatsProviderEx
     {
