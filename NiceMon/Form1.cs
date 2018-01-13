@@ -11,6 +11,7 @@ using System.Threading;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
+using System.Data.SQLite;
 
 namespace NiceMon
 {
@@ -23,18 +24,42 @@ namespace NiceMon
         private string urlParametersWithKey = "";
         private const string myBTCaddress = "3BUJYidvCCseRrgKzq5xG2ENtD1FyYkemu";
         private SortedDictionary<int, decimal> snapshot = new SortedDictionary<int, decimal>();
+        private SQLiteConnection dbCon;
+        private string nicehashWalletAddress = "";
 
         public Form1()
         {
             InitializeComponent();
             donateLabel.Text += myBTCaddress;
-            nicehashWalletAddressBox.Text = "39J9HLSEZz7BPiVfPdEPPrAxy1jyjK8dLL";//DEBUG ONLY THIS MUST BE REMOVED
+            nicehashWalletAddressBox.Text = "39J9HLSEZz7BPiVfPdEPPrAxy1jyjK8dLL";//DEBUG ONLY THIS MUST BE REMOVED            
             System.Windows.Forms.Form.CheckForIllegalCrossThreadCalls = false;
         }
 
         private void Form1_Load(object sender, EventArgs e)
-        {           
+        {
+            initDB();
+        }
 
+        private void initDB()
+        {
+            if (!System.IO.File.Exists("NiceMonDB.sqlite"))
+            {
+                try
+                {
+                    SQLiteConnection.CreateFile("NiceMonDB.sqlite");
+                    dbCon = new SQLiteConnection("Data Source=NiceMonDB.sqlite");
+                    dbCon.Open();
+                    string sql = "CREATE TABLE profit (address VARCHAR(40), timestamp INT, btc DECIMAL(15,8))";
+                    SQLiteCommand command = new SQLiteCommand(sql, dbCon);
+                    command.ExecuteNonQuery();
+                }
+                catch (Exception e)
+                {
+                    log(e.Message);
+                }
+            }
+            else
+                dbCon = new SQLiteConnection("Data Source=NiceMonDB.sqlite");
         }
 
         private void startUpdatingButton_Click(object sender, EventArgs e)
@@ -52,8 +77,9 @@ namespace NiceMon
         private void enableUpdate()
         {
             nicehashWalletAddressBox.Enabled = false;
+            nicehashWalletAddress = nicehashWalletAddressBox.Text;
             startUpdatingButton.Text = "Stop";
-            urlParametersWithKey = urlParameters + nicehashWalletAddressBox.Text;
+            urlParametersWithKey = urlParameters + nicehashWalletAddress;
             Thread t = new Thread(new ThreadStart(getNiceHashStats));
             t.Start();           
             this.runningUpdate = true;
@@ -108,7 +134,7 @@ namespace NiceMon
                             }
                             catch (System.ArgumentException e)
                             {
-                                if (e.Message.IndexOf("An entry with the same key") >= 0) //THIS DOES NOT WORK
+                                if (e.Message.IndexOf("An entry with the same key") >= 0)
                                 {
                                     snapshot[Int32.Parse(jsonOutput.result.past[i].data[j][0].ToString())] = snapshot[Int32.Parse(jsonOutput.result.past[i].data[j][0].ToString())] + decimal.Parse(jsonOutput.result.past[i].data[j][2].ToString());
                                 }
@@ -118,10 +144,29 @@ namespace NiceMon
                         }
                     }
                     log("Complete.");
-                    foreach (KeyValuePair<int, decimal> kvp in snapshot)
+                    /*foreach (KeyValuePair<int, decimal> kvp in snapshot)
                     {
                         log(kvp.Key + " : " + kvp.Value);
+                    }*/
+                    log("Updating database...");
+                    dbCon.Open();
+                    using (var cmd = new SQLiteCommand(dbCon))
+                    {
+                        using (var transaction = dbCon.BeginTransaction())
+                        {
+                            foreach (KeyValuePair<int, decimal> kvp in snapshot)
+                            {
+
+                                cmd.CommandText = "INSERT INTO profit (address, timestamp, btc) VALUES ('" + nicehashWalletAddress + "', '" + kvp.Key + "', '" + kvp.Value + "');";
+                                cmd.ExecuteNonQuery();
+
+                            }
+
+                            transaction.Commit();
+                        }
                     }
+                    dbCon.Close();
+                    log("Done.");
                     
                 } 
                 catch (Exception ex)
