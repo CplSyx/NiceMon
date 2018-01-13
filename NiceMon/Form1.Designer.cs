@@ -35,6 +35,8 @@
             this.label2 = new System.Windows.Forms.Label();
             this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
             this.logOutput = new System.Windows.Forms.TextBox();
+            this.donateLabel = new System.Windows.Forms.Label();
+            this.textBox1 = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -90,7 +92,7 @@
             0,
             524288});
             this.numericUpDown1.Name = "numericUpDown1";
-            this.numericUpDown1.Size = new System.Drawing.Size(242, 20);
+            this.numericUpDown1.Size = new System.Drawing.Size(81, 20);
             this.numericUpDown1.TabIndex = 5;
             this.numericUpDown1.Value = new decimal(new int[] {
             37711,
@@ -100,17 +102,41 @@
             // 
             // logOutput
             // 
-            this.logOutput.Location = new System.Drawing.Point(16, 410);
+            this.logOutput.Location = new System.Drawing.Point(16, 63);
             this.logOutput.Multiline = true;
             this.logOutput.Name = "logOutput";
-            this.logOutput.Size = new System.Drawing.Size(634, 154);
+            this.logOutput.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.logOutput.Size = new System.Drawing.Size(634, 515);
             this.logOutput.TabIndex = 6;
+            // 
+            // donateLabel
+            // 
+            this.donateLabel.AutoSize = true;
+            this.donateLabel.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.donateLabel.Location = new System.Drawing.Point(13, 581);
+            this.donateLabel.Name = "donateLabel";
+            this.donateLabel.Size = new System.Drawing.Size(186, 13);
+            this.donateLabel.TabIndex = 7;
+            this.donateLabel.Text = "Like this app? Buy me a BTC coffee!  ";
+            this.donateLabel.Click += new System.EventHandler(this.donateLabel_Click);
+            // 
+            // textBox1
+            // 
+            this.textBox1.Enabled = false;
+            this.textBox1.Location = new System.Drawing.Point(257, 36);
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(154, 20);
+            this.textBox1.TabIndex = 8;
+            this.textBox1.Text = "Time to Target";
+            this.textBox1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1300, 576);
+            this.ClientSize = new System.Drawing.Size(1300, 603);
+            this.Controls.Add(this.textBox1);
+            this.Controls.Add(this.donateLabel);
             this.Controls.Add(this.logOutput);
             this.Controls.Add(this.numericUpDown1);
             this.Controls.Add(this.label2);
@@ -121,7 +147,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "Form1";
-            this.Text = "MineSuite";
+            this.Text = "NiceMon";
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
             this.ResumeLayout(false);
@@ -137,6 +163,8 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.NumericUpDown numericUpDown1;
         private System.Windows.Forms.TextBox logOutput;
+        private System.Windows.Forms.Label donateLabel;
+        private System.Windows.Forms.TextBox textBox1;
     }
 }
 
