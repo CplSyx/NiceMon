@@ -52,7 +52,44 @@ namespace NiceMon
 
         private void updateProfitChart()
         {
-            profitabilityChart.Series[0].Points.DataBindXY(latestData.Keys, latestData.Values);
+            SortedDictionary<int, decimal> profitData = new SortedDictionary<int, decimal>();
+            SortedDictionary<int, decimal> sortedLatestData = new SortedDictionary<int, decimal>(latestData);
+            foreach (KeyValuePair<int, decimal> kvp in sortedLatestData)
+            {
+                try
+                {
+                    /*System.DateTime dateTime = new System.DateTime(1970, 1, 1, 0, 0, 0, 0);
+                    dateTime = dateTime.AddSeconds(kvp.Key * 300);
+                    profitData[dateTime.ToShortDateString() + " " + dateTime.ToShortTimeString()] = kvp.Value - latestData[kvp.Key - 1];*/
+                    decimal value = ((kvp.Value - sortedLatestData[kvp.Key - 1]) * 288); //CANNOT ITERATE WITH - 1 AS SOME DATA MISSING IN API RESULT. NEED TO TAKE PREVIOUS VALUE. USE EXCEL TO COMPARE.
+                    if(value <= 0){
+                        profitData.Add(kvp.Key, 0);
+                    }
+                    else
+                    {
+                        profitData.Add(kvp.Key, value);
+                    }
+                    
+                }
+                catch (KeyNotFoundException)
+                {
+                    continue;
+                }
+                
+            }
+            /*foreach (KeyValuePair<int, decimal> kvp in latestData)
+                   {
+                       log(kvp.Key + "," + kvp.Value);
+                   }
+            log("---------------------------------");
+
+            foreach (KeyValuePair<int, decimal> kvp in profitData)
+            {
+                log(kvp.Key + "," + kvp.Value);
+            }*/
+            //profitabilityChart.Series[0].Points.DataBindXY(latestData.Keys, latestData.Values);
+            profitabilityChart.Series[0].Points.DataBindXY(profitData.Keys, profitData.Values);
+
         }
 
         private void initDB()
@@ -250,24 +287,32 @@ namespace NiceMon
 
         private void updateTargetDate()
         {
-            decimal target = decimal.Parse(numericUpDown1.Value.ToString());
-            var daysToTarget = (target / averageProfit30Days);
-            var yearsToTarget = Math.Truncate(daysToTarget / 365);
-            var monthsToTarget = Math.Truncate((daysToTarget % 365) / 30);
-            var remainingDays = Math.Truncate((daysToTarget % 365) % 30);
-            if(yearsToTarget > 0)
+            if (latestData.Count > 0)
             {
-                textBox1.Text = yearsToTarget + " years, " + monthsToTarget + " months, " + remainingDays + " days";
-            }
-            else if (monthsToTarget > 0)
-            {
-                textBox1.Text = monthsToTarget + " months, " + remainingDays + " days";
-            }
-            else
-            {
-                textBox1.Text = remainingDays + " days";
+                decimal target = decimal.Parse(numericUpDown1.Value.ToString());
+                var daysToTarget = (target / averageProfit30Days);
+                var yearsToTarget = Math.Truncate(daysToTarget / 365);
+                var monthsToTarget = Math.Truncate((daysToTarget % 365) / 30);
+                var remainingDays = Math.Truncate((daysToTarget % 365) % 30);
+                if (yearsToTarget > 0)
+                {
+                    textBox1.Text = yearsToTarget + " years, " + monthsToTarget + " months, " + remainingDays + " days";
+                }
+                else if (monthsToTarget > 0)
+                {
+                    textBox1.Text = monthsToTarget + " months, " + remainingDays + " days";
+                }
+                else
+                {
+                    textBox1.Text = remainingDays + " days";
+                }
             }
 
+        }
+
+        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
+        {
+            updateTargetDate();
         }
 
 

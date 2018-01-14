@@ -104,6 +104,7 @@
             0,
             0,
             327680});
+            this.numericUpDown1.ValueChanged += new System.EventHandler(this.numericUpDown1_ValueChanged);
             // 
             // logOutput
             // 
@@ -137,6 +138,13 @@
             // 
             // profitabilityChart
             // 
+            chartArea1.AxisX.LineColor = System.Drawing.Color.DarkGray;
+            chartArea1.AxisX2.LineColor = System.Drawing.Color.DarkGray;
+            chartArea1.AxisY.LineColor = System.Drawing.Color.Gray;
+            chartArea1.AxisY.Title = "BTC/Day";
+            chartArea1.AxisY2.LineColor = System.Drawing.Color.DarkGray;
+            chartArea1.CursorX.IsUserEnabled = true;
+            chartArea1.CursorX.IsUserSelectionEnabled = true;
             chartArea1.Name = "ChartArea1";
             this.profitabilityChart.ChartAreas.Add(chartArea1);
             legend1.Name = "Legend1";
